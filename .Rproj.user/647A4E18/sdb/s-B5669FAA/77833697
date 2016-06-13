@@ -1,0 +1,21 @@
+{
+    "collab_server" : "",
+    "contents" : "library(data.table)\nlibrary(dplyr)\nlibrary(pROC)\nlibrary(caret)\nlibrary(utils)\n\nraw <- fread(\"F:/R/kobe/data.csv\")\n\n#move the target variable to the last\nraw <- select(raw, -shot_made_flag, everything())\n\nraw$game_event_id <- NULL\nraw$game_id <- NULL\nraw$team_id <- NULL\nraw$team_name <- NULL\n\n#define data types\nraw$action_type <- factor(raw$action_type, ordered = FALSE)\nraw$combined_shot_type <- factor(raw$combined_shot_type, ordered = FALSE)\nraw$period <- factor(raw$period, ordered = FALSE)\nraw$playoffs <- factor(ifelse(raw$playoffs == 1,\"y\",\"n\"))\nraw$shot_type <- factor(raw$shot_type, ordered = TRUE)\nraw$shot_zone_area <- factor(raw$shot_zone_area, ordered = FALSE)\nraw$shot_zone_basic <- factor(raw$shot_zone_basic, ordered = FALSE)\n\n\n\n#split into test and train set\ntrain <- dplyr::filter(raw, !is.na(shot_made_flag))\n\ntest <- dplyr::filter(raw, is.na(shot_made_flag))\n\ntest$shot_made_flag <- NULL\n\n\n",
+    "created" : 1465184989505.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "2077844346",
+    "id" : "77833697",
+    "lastKnownWriteTime" : 1465790983,
+    "last_content_update" : 1465790983471,
+    "path" : "F:/R/kobe/first.R",
+    "project_path" : "first.R",
+    "properties" : {
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}
