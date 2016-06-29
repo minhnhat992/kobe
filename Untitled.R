@@ -19,6 +19,7 @@ raw$team_name <- NULL
 raw$shot_id <- NULL
 raw$matchup <- NULL
 raw$game_date <- NULL
+raw$action_type <- NULL
 
 #define data types
 raw$action_type <- factor(raw$action_type, ordered = FALSE)
@@ -31,8 +32,9 @@ raw$shot_zone_basic <- factor(raw$shot_zone_basic, ordered = FALSE)
 raw$shot_zone_range <- factor(raw$shot_zone_range, ordered = FALSE)
 raw$season <- factor(raw$season, ordered= FALSE)
 raw$opponent <- factor(raw$opponent, ordered = FALSE)
-ymd(raw$game_date)
+#raw$game_date <- lapply(raw$game_date, ymd)
 raw$shot_made_flag <- factor(ifelse(raw$shot_made_flag == 1,"y","n"))
+
 
 #see the structure
 str(raw)
@@ -41,36 +43,40 @@ str(raw)
 
 dummies <- dummyVars(data = raw, shot_made_flag ~ .)
 
-dummies2 <- predict(dummies, newdata = raw)
+dummies2 <- predict(dummies, newdata = raw) %>% 
+  data.table()
 
-
+done <- cbind.data.frame(dummies2, raw$shot_made_flag)
 
 #split into test and train set
-train <- dplyr::filter(raw, !is.na(shot_made_flag))
+train <- dplyr::filter(done, !is.na(V2))
 
-test <- dplyr::filter(raw, is.na(shot_made_flag))
+test <- dplyr::filter(done, is.na(V2))
 
-test$shot_made_flag <- NULL
+test$V2 <- NULL
 
 #split train set
 set.seed(1234)
 
-splitindex <- createDataPartition(train$shot_made_flag, p = 0.7, list = FALSE)
+splitindex <- createDataPartition(train$V2, p = 0.7, list = FALSE)
 
 train_set <- train[splitindex,]
 
 valid_set <- train[-splitindex,]
 
 # see if need to balance data
-print(prop.table(table(train_set$shot_made_flag))*100) #no need
+print(prop.table(table(train_set$V2))*100) #no need
 
 #establish train parameters
-train_control <- trainControl(method = "none",
-                              repeats = 3,
-                              number = 10,
+train_control <- trainControl(method = "adaptive_cv",
+                              number = 5,
+                              repeats = 2,
                               savePredictions = TRUE,
                               classProbs = TRUE,
-                              summaryFunction = twoClassSummary)
+                              summaryFunction = twoClassSummary,
+                              verboseIter = TRUE,
+                              returnResamp = "none",
+                              search = "random")
 
 #create model based on different methods:
 #set time
@@ -83,46 +89,12 @@ set.seed(1045)
 # registerDoParallel(cl)
 
 model <- train(data = train_set,
-               shot_made_flag~.,
+               V2~.,
                trControl = train_control,
-               method = "glmboost",
+               method = "rf",
                tuneLength = 5,
                preProcess = c("center", "scale","pca"),
-               allowParallel = TRUE,
                verbose = TRUE,
                size = 3,
                metric = "ROC")
-
-# #summary model
-# summary(model)
-# 
-# #stop Cluster
-# stopCluster(cl)
-# 
-# #stop recording time
-# time <- proc.time() - ptm
-
-# #train set performance
-# probs <- predict(model,newdata = train_set, type ="prob")
-# 
-# pred  <- factor(ifelse(probs[,"y"] > 0.5,"y","n"))
-# 
-# summary(pred)
-# 
-# matrix <- confusionMatrix(data = pred, 
-#                           train_set$Survived,
-#                           positive = levels(train_set$Survived)[2]) %>% 
-#   print()
-# 
-# rocCurve  <- roc(response = train_set$Survived,
-#                  predictor = probs[,"y"],
-#                  levels = levels(train_set$Survived))
-# 
-# curve <- plot(rocCurve, print.thres = c(.5), type = "S",
-#               print.thres.pattern = "%.3f (Spec = %.2f, Sens = %.2f)",
-#               print.thres.cex = .8,
-#               legacy.axes = TRUE)
-# 
-# curve#AUC
-
 
