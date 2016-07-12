@@ -49,9 +49,19 @@ court <- rasterGrob(readJPEG(getURLContent(court_img)),
 # plot using NBA court background and colour by shot zone
 ggplot(sub, aes(x=loc_x, y=loc_y)) + 
   annotation_custom(court, -250, 250, -50, 420) +
-  geom_point(aes(colour = shot_zone_basic, shape = shot_made_flag)) +
+  geom_point(aes(colour = shot_made_flag, shape = shot_made_flag)) +
   xlim(-250, 250) +
   ylim(-50, 420)
+
+fg <- data.frame(raw$year, raw$opponent, raw$shot_made_flag) %>% 
+  filter(!raw.shot_made_flag == "NA")
+
+fg2 <- fg %>% 
+  filter(raw.opponent == "POR") %>% 
+  group_by(raw.year) %>% 
+  tally %>% 
+  group_by(raw.year)
+
 
 
 
