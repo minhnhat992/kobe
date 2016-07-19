@@ -41,7 +41,7 @@ ui <- fluidPage(
                   
                   value = 1996,
                   
-                  animate = TRUE
+                  animate = TRUE # options to animate the graph
                   )),
       
     
